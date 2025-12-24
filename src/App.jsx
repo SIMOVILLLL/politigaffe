@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Info, AlertTriangle, Search, ArrowLeft, ArrowRightLeft, FileText, Eye, ChevronRight, Settings, Trash2, Newspaper, Lock, LogOut, Printer, Menu, X, Edit3, Save, PlusCircle, Cloud, CloudOff, Upload, CheckCircle } from 'lucide-react';
+import { Home, Info, AlertTriangle, Search, ArrowLeft, ArrowRightLeft, FileText, Eye, ChevronRight, Settings, Trash2, Newspaper, Lock, LogOut, Printer, Menu, X, Edit3, Save, PlusCircle, Cloud, CloudOff, Upload, CheckCircle, Loader2 } from 'lucide-react';
 
 // --- IMPORT NECESSARI PER FIREBASE ---
-// Se il tuo editor ti da errore qui, devi eseguire nel terminale: npm install firebase
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, onSnapshot, doc, deleteDoc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { getFirestore, collection, onSnapshot, doc, deleteDoc, setDoc, updateDoc, writeBatch, getDocs } from "firebase/firestore";
 
-// --- CONFIGURAZIONE FIREBASE (DA COMPILARE) ---
-// 1. Vai su console.firebase.google.com
-// 2. Crea progetto -> Aggiungi app Web (</>)
-// 3. Copia le chiavi che ti da e incollale qui sotto al posto delle stringhe vuote.
+// --- CONFIGURAZIONE FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyClzaGSuhKFnrQ_VOmJNIZXt3Yjp8ASCNU", 
   authDomain: "politigaffee.firebaseapp.com",
@@ -21,17 +17,15 @@ const firebaseConfig = {
 
 // Inizializzazione sicura del Database
 let dbFire = null;
-if (firebaseConfig.apiKey) {
-    try {
-        const app = initializeApp(firebaseConfig);
-        dbFire = getFirestore(app);
-        console.log("Firebase connesso!");
-    } catch (e) {
-        console.error("Errore inizializzazione Firebase:", e);
-    }
+try {
+    const app = initializeApp(firebaseConfig);
+    dbFire = getFirestore(app);
+    console.log("Firebase connesso correttamente.");
+} catch (e) {
+    console.error("Errore critico connessione Firebase:", e);
 }
 
-// Password Admin semplice
+// Password Admin
 const ADMIN_PASSWORD = "admin123"; 
 
 const getImageUrl = (url) => {
@@ -44,7 +38,6 @@ const getImageUrl = (url) => {
 };
 
 // --- DATABASE DI BACKUP (SEED DATA) ---
-// Questi dati vengono usati se Firebase non è configurato O per popolare il DB la prima volta.
 const staticPoliticians = [
     // DESTRA / GOVERNO
     { id: 'meloni', name: 'Giorgia Meloni', party: 'FdI', role: 'Presidente del Consiglio', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Giorgia&backgroundColor=ffdfbf', banner: 'bg-blue-900', bio: "Io sono Giorgia, sono una donna, sono una madre, sono cristiana.", stats: { followers: '3.1M', gaffes: 112, incoherences: 88 }, posts: [], inconsistencies: [] },
@@ -74,16 +67,15 @@ const staticPoliticians = [
 
 const App = () => {
     // STATE
-    const [politicians, setPoliticians] = useState(staticPoliticians); // Parte con i dati statici
+    const [politicians, setPoliticians] = useState([]); // Parte vuoto, si riempie dal DB
+    const [loading, setLoading] = useState(true);
     const [view, setView] = useState('home'); 
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [selectedPost, setSelectedPost] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [showFullRegister, setShowFullRegister] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [isDbOnline, setIsDbOnline] = useState(false);
-    const [seeding, setSeeding] = useState(false);
-
+    
     // Admin State
     const [isAdmin, setIsAdmin] = useState(false);
     const [passwordInput, setPasswordInput] = useState('');
@@ -93,26 +85,30 @@ const App = () => {
     const [postForm, setPostForm] = useState({ id: null, title: '', type: 'gaffe', content: '', date: '', source: '', body: '', image: '' });
     const [profileForm, setProfileForm] = useState({ id: '', name: '', party: '', role: '', avatar: '', bio: '', banner: 'bg-gray-500' });
     const [newPoliticianMode, setNewPoliticianMode] = useState(false);
+    const [seeding, setSeeding] = useState(false);
+    const [isDbOnline, setIsDbOnline] = useState(false);
 
-    // --- SINCRONIZZAZIONE DATI (IL CUORE DEL SISTEMA) ---
+    // --- SINCRONIZZAZIONE DATI ---
     useEffect(() => {
-        if (!dbFire) return; // Se Firebase non è configurato, usa lo stato iniziale statico e basta
+        // Se Firebase non c'è, carica i dati statici e basta
+        if (!dbFire) {
+            setPoliticians(staticPoliticians);
+            setLoading(false);
+            return;
+        }
 
-        // Ascolta le modifiche in tempo reale dal database
+        // Ascolta il DB Reale
         const unsubscribe = onSnapshot(collection(dbFire, "politicians"), (snapshot) => {
-            if (!snapshot.empty) {
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setPoliticians(data);
-                setIsDbOnline(true);
-            } else {
-                // DB vuoto ma connesso
-                setIsDbOnline(true);
-                // Non sovrascriviamo con array vuoto per evitare flash, 
-                // ma l'utente admin vedrà che può fare il "Seed"
-            }
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setPoliticians(data);
+            setIsDbOnline(true);
+            setLoading(false);
         }, (error) => {
-            console.error("Errore sync:", error);
+            console.error("Errore lettura DB:", error);
+            // Fallback in caso di errore (es. permessi o offline)
+            setPoliticians(staticPoliticians);
             setIsDbOnline(false);
+            setLoading(false);
         });
 
         return () => unsubscribe();
@@ -120,29 +116,33 @@ const App = () => {
 
     // --- FUNZIONI DATABASE ---
     const seedDatabase = async () => {
-        if (!dbFire) return alert("Devi prima configurare le chiavi Firebase nel codice!");
-        if (!window.confirm("Attenzione: Caricherò tutti i 22 politici nel database online. Confermi?")) return;
+        if (!dbFire) return alert("Firebase non connesso.");
+        if (!window.confirm("Caricare i 22 politici nel database online?")) return;
         
         setSeeding(true);
         const batch = writeBatch(dbFire);
         
         staticPoliticians.forEach(pol => {
             const ref = doc(dbFire, "politicians", pol.id);
-            batch.set(ref, pol);
+            // Assicuriamoci che i campi array esistano
+            const safePol = {
+                ...pol,
+                posts: pol.posts || [],
+                inconsistencies: pol.inconsistencies || []
+            };
+            batch.set(ref, safePol);
         });
 
         try {
             await batch.commit();
-            alert("Database popolato con successo! Ora è online.");
+            alert("Database popolato! Aggiorna la pagina se necessario.");
         } catch (e) {
-            alert("Errore durante il caricamento: " + e.message);
+            alert("Errore upload: " + e.message);
         }
         setSeeding(false);
     };
 
-    // --- CRUD FUNCTIONS (IBRIDE) ---
-    // Queste funzioni decidono se salvare su Firebase (se connesso) o solo in locale (se demo)
-    
+    // --- CRUD GENERICO ---
     const saveData = async (collectionName, docId, data, merge = true) => {
         if (dbFire) {
             try {
@@ -150,7 +150,7 @@ const App = () => {
                 return true;
             } catch(e) { alert("Errore Cloud: " + e.message); return false; }
         } else {
-            // Fallback locale (solo per demo)
+            // Fallback locale
             setPoliticians(prev => {
                 const exists = prev.find(p => p.id === docId);
                 if (exists) return prev.map(p => p.id === docId ? { ...p, ...data } : p);
@@ -172,86 +172,120 @@ const App = () => {
         }
     };
 
-    // --- GESTORI EVENTI UI ---
+    // --- HANDLERS ---
     const handleLogin = () => {
         if (passwordInput === ADMIN_PASSWORD) {
             setIsAdmin(true); setView('admin'); setLoginError(false); setPasswordInput('');
         } else { setLoginError(true); }
     };
 
+    const handleLogout = () => {
+        setIsAdmin(false); setView('home'); setEditingPolitician(null);
+    };
+
     const handleSavePoliticianProfile = async () => {
         if (!profileForm.name) return;
         const polId = newPoliticianMode ? profileForm.name.toLowerCase().replace(/\s+/g, '') : editingPolitician.id;
-        const polData = { ...profileForm, id: polId };
         
-        if (!newPoliticianMode) {
-            // Mantieni i post esistenti se stiamo solo modificando il profilo
-            polData.posts = editingPolitician.posts || [];
-            polData.inconsistencies = editingPolitician.inconsistencies || [];
-        } else {
-            polData.posts = [];
-            polData.inconsistencies = [];
-            polData.stats = { followers: '0', gaffes: 0, incoherences: 0 };
-        }
+        // Prepariamo i dati sicuri
+        const polData = { 
+            ...profileForm, 
+            id: polId,
+            // Se è nuovo inizializza array vuoti, se esiste mantieni i vecchi
+            posts: newPoliticianMode ? [] : (editingPolitician.posts || []),
+            inconsistencies: newPoliticianMode ? [] : (editingPolitician.inconsistencies || []),
+            stats: newPoliticianMode ? { followers: '0', gaffes: 0, incoherences: 0 } : (editingPolitician.stats || { followers: '0', gaffes: 0, incoherences: 0 })
+        };
 
         await saveData("politicians", polId, polData);
+        
         if (newPoliticianMode) {
             handleSelectPolitician(polData);
         } else {
-            setEditingPolitician(polData);
+            setEditingPolitician(polData); // Aggiorna la vista corrente
         }
-        alert(dbFire ? "Salvato nel Cloud!" : "Salvato in Locale (Demo)");
+        alert("Salvato!");
     };
 
     const handleDeletePolitician = async (e, politicianId) => {
         e.stopPropagation();
-        if (!window.confirm("Eliminare definitivamente questo politico?")) return;
+        if (!window.confirm("Eliminare definitivamente?")) return;
         await deleteData("politicians", politicianId);
         if (editingPolitician?.id === politicianId) setEditingPolitician(null);
     };
 
     const handleSavePost = async () => {
         if (!editingPolitician || !postForm.title) return;
-        let updatedPosts = editingPolitician.posts ? [...editingPolitician.posts] : [];
+        
+        // Assicuriamoci che posts sia un array
+        let currentPosts = editingPolitician.posts || [];
+        
         const newPostData = { ...postForm, id: postForm.id || Date.now() };
+        let updatedPosts;
 
         if (postForm.id) {
-            updatedPosts = updatedPosts.map(p => p.id === postForm.id ? newPostData : p);
+            updatedPosts = currentPosts.map(p => p.id === postForm.id ? newPostData : p);
         } else {
-            updatedPosts = [newPostData, ...updatedPosts];
+            updatedPosts = [newPostData, ...currentPosts];
         }
 
         const updatedPol = { ...editingPolitician, posts: updatedPosts };
-        // Aggiorna l'intero documento politico con i nuovi post
-        await saveData("politicians", editingPolitician.id, updatedPol);
+        
+        // Aggiorna solo il campo posts del documento
+        await saveData("politicians", editingPolitician.id, { posts: updatedPosts }, true);
+        
         setEditingPolitician(updatedPol);
         resetPostForm();
     };
 
     const handleDeletePost = async (postId) => {
         if (!window.confirm("Eliminare post?")) return;
-        const updatedPosts = editingPolitician.posts.filter(p => p.id !== postId);
+        const currentPosts = editingPolitician.posts || [];
+        const updatedPosts = currentPosts.filter(p => p.id !== postId);
         const updatedPol = { ...editingPolitician, posts: updatedPosts };
-        await saveData("politicians", editingPolitician.id, updatedPol);
+        
+        await saveData("politicians", editingPolitician.id, { posts: updatedPosts }, true);
         setEditingPolitician(updatedPol);
     };
 
-    // Helpers
-    const handleSelectPolitician = (p) => { setEditingPolitician(p); setProfileForm(p); setEditMode('posts'); setNewPoliticianMode(false); resetPostForm(); };
-    const resetPostForm = () => setPostForm({ id: null, title: '', type: 'gaffe', content: '', date: '', source: '', body: '', image: '' });
-    const setupNewPolitician = () => { setNewPoliticianMode(true); setEditingPolitician({ id: 'new', name: 'Nuovo', posts: [] }); setProfileForm({ id: '', name: '', party: '', role: '', avatar: '', bio: '', banner: 'bg-gray-500' }); setEditMode('profile'); };
+    // --- UI HELPERS ---
+    const handleSelectPolitician = (p) => { 
+        // Clone profondo per evitare riferimenti mutabili
+        const safeP = JSON.parse(JSON.stringify(p));
+        // Assicura che posts esista
+        if (!safeP.posts) safeP.posts = [];
+        
+        setEditingPolitician(safeP); 
+        setProfileForm(safeP); 
+        setEditMode('posts'); 
+        setNewPoliticianMode(false); 
+        resetPostForm(); 
+    };
+    
+    const setupNewPolitician = () => { 
+        setNewPoliticianMode(true); 
+        setEditingPolitician({ id: 'new', name: 'Nuovo', posts: [] }); 
+        setProfileForm({ id: '', name: '', party: '', role: '', avatar: '', bio: '', banner: 'bg-gray-500' }); 
+        setEditMode('profile'); 
+    };
+
     const navigateTo = (v) => { setView(v); setMobileMenuOpen(false); };
     const handleProfileClick = (p) => { setSelectedProfile(p); setShowFullRegister(false); setView('profile'); setMobileMenuOpen(false); };
     const handlePostClick = (p) => { setSelectedPost(p); setView('article'); };
     const goBackToProfile = () => { setView('profile'); setSelectedPost(null); };
 
+    // Filtri e liste sicure
     const filteredPoliticians = politicians.filter(p => 
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        p.party.toLowerCase().includes(searchTerm.toLowerCase())
+        (p.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+        (p.party?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
-    const gaffePosts = selectedProfile?.posts?.filter(p => p.type === 'gaffe' || p.type === 'quote') || [];
-    const newsPosts = selectedProfile?.posts?.filter(p => p.type === 'news') || [];
+
+    const gaffePosts = (selectedProfile?.posts || []).filter(p => p.type === 'gaffe' || p.type === 'quote');
+    const newsPosts = (selectedProfile?.posts || []).filter(p => p.type === 'news');
     const visibleGaffes = showFullRegister ? gaffePosts : gaffePosts.slice(0, 5);
+
+    // --- RENDER ---
+    if (loading) return <div className="h-screen flex items-center justify-center bg-[#F4F1EA]"><div className="flex flex-col items-center gap-4"><Loader2 className="animate-spin text-black" size={48}/><p className="font-mono text-sm uppercase">Caricamento...</p></div></div>;
 
     return (
         <div className="flex h-screen bg-[#F4F1EA] text-[#1a1a1a] overflow-hidden">
@@ -274,9 +308,9 @@ const App = () => {
                 </nav>
                 <div className="p-4 border-t border-black bg-white flex justify-between items-center">
                     <div className="flex flex-col">
-                        <p className="text-[10px] leading-relaxed font-mono text-gray-500">v.2.0 Hybrid</p>
+                        <p className="text-[10px] leading-relaxed font-mono text-gray-500">v.2.1 Stable</p>
                         <div className="flex items-center gap-1 text-[9px] font-bold uppercase">
-                            {isDbOnline ? <><Cloud size={10} className="text-green-600"/> Online</> : <><CloudOff size={10} className="text-red-500"/> Locale</>}
+                            {isDbOnline ? <><Cloud size={10} className="text-green-600"/> Online</> : <><CloudOff size={10} className="text-red-500"/> Offline</>}
                         </div>
                     </div>
                     <button onClick={() => isAdmin ? setView('admin') : setView('login')} className="text-gray-400 hover:text-black transition">{isAdmin ? <Settings size={14} /> : <Lock size={14} />}</button>
@@ -317,34 +351,41 @@ const App = () => {
                         <header className="mb-8 pt-4 border-b-2 border-black pb-6">
                             <h1 className="text-3xl md:text-5xl font-black text-black mb-3 serif-font uppercase tracking-tight">Osservatorio Politico</h1>
                             <p className="text-sm md:text-base text-gray-700 max-w-3xl font-medium leading-relaxed font-serif">
-                                Monitoraggio indipendente. {isDbOnline ? <span className="text-green-600 font-bold">● CLOUD ATTIVO</span> : <span className="text-orange-600 font-bold">● MODO LOCALE (Inserisci API Key per il Cloud)</span>}
+                                Monitoraggio indipendente. {isDbOnline ? <span className="text-green-600 font-bold">● ONLINE</span> : <span className="text-orange-600 font-bold">● LOCALE (Demo)</span>}
                             </p>
                         </header>
                         <div className="mb-8 flex items-center border border-black bg-white p-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-w-lg">
                             <div className="bg-black text-white p-2"><Search size={18} /></div>
                             <input type="text" placeholder="CERCA..." className="w-full pl-3 pr-3 py-2 bg-transparent focus:outline-none text-sm font-bold uppercase" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredPoliticians.map(p => (
-                                <div key={p.id} onClick={() => handleProfileClick(p)} className="group cursor-pointer bg-white border border-black p-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all">
-                                    <div className="flex border-b border-black">
-                                        <div className="w-24 h-24 border-r border-black bg-gray-100 shrink-0 overflow-hidden"><img src={getImageUrl(p.avatar)} alt={p.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300" /></div>
-                                        <div className="p-3 flex flex-col justify-center flex-1 bg-[#fffdf5] min-w-0">
-                                            <h3 className="text-lg font-bold serif-font leading-none mb-1 truncate">{p.name}</h3>
-                                            <span className="text-[10px] font-bold uppercase bg-black text-white w-fit px-1.5 py-0.5">{p.party}</span>
-                                            <span className="text-[10px] mt-1 truncate font-mono text-gray-500">{p.role}</span>
+                        {politicians.length === 0 ? (
+                            <div className="p-10 border-2 border-dashed border-gray-400 text-center text-gray-500 font-mono">
+                                <p className="mb-4">IL DATABASE È VUOTO</p>
+                                <p className="text-xs">Vai su Admin &rarr; "Carica Dati Iniziali" per ripristinare.</p>
+                            </div>
+                        ) : (
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {filteredPoliticians.map(p => (
+                                    <div key={p.id} onClick={() => handleProfileClick(p)} className="group cursor-pointer bg-white border border-black p-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all">
+                                        <div className="flex border-b border-black">
+                                            <div className="w-24 h-24 border-r border-black bg-gray-100 shrink-0 overflow-hidden"><img src={getImageUrl(p.avatar)} alt={p.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300" /></div>
+                                            <div className="p-3 flex flex-col justify-center flex-1 bg-[#fffdf5] min-w-0">
+                                                <h3 className="text-lg font-bold serif-font leading-none mb-1 truncate">{p.name}</h3>
+                                                <span className="text-[10px] font-bold uppercase bg-black text-white w-fit px-1.5 py-0.5">{p.party}</span>
+                                                <span className="text-[10px] mt-1 truncate font-mono text-gray-500">{p.role}</span>
+                                            </div>
+                                        </div>
+                                        <div className="px-3 py-2 flex justify-between items-center bg-white">
+                                            <div className="flex gap-3 text-[10px] font-bold font-mono">
+                                                <span className="text-red-600">⚠ {p.stats.gaffes || 0}</span>
+                                                <span className="text-blue-600">⇄ {p.stats.incoherences || 0}</span>
+                                            </div>
+                                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                         </div>
                                     </div>
-                                    <div className="px-3 py-2 flex justify-between items-center bg-white">
-                                        <div className="flex gap-3 text-[10px] font-bold font-mono">
-                                            <span className="text-red-600">⚠ {p.stats.gaffes || 0}</span>
-                                            <span className="text-blue-600">⇄ {p.stats.incoherences || 0}</span>
-                                        </div>
-                                        <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -436,7 +477,6 @@ const App = () => {
                             <button onClick={handleLogout} className="flex items-center gap-1 text-xs uppercase font-bold text-red-600 hover:text-red-800"><LogOut size={14}/> Esci</button>
                         </header>
                         
-                        {/* SEED BUTTON - Solo se connesso a Firebase */}
                         {dbFire && (
                             <div className="mb-8 p-4 bg-orange-100 border border-orange-500 flex flex-col md:flex-row justify-between items-center gap-4">
                                 <div>
@@ -504,7 +544,7 @@ const App = () => {
                                                     </div>
                                                 </div>
                                                 <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar max-h-64 border-t border-black pt-2">
-                                                    {editingPolitician.posts?.length > 0 ? editingPolitician.posts.map(post => (
+                                                    {(editingPolitician.posts || []).length > 0 ? editingPolitician.posts.map(post => (
                                                         <div key={post.id} className="flex justify-between items-center p-2 bg-gray-100 border border-gray-300 text-xs">
                                                             <span className="truncate w-1/2 font-bold">{post.title}</span>
                                                             <div className="flex gap-2">
