@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Info, AlertTriangle, Search, ArrowLeft, ArrowRightLeft, FileText, Eye, ChevronRight, Settings, Trash2, Newspaper, Lock, LogOut, Printer, Menu, X, Edit3, Save, PlusCircle, Cloud, CloudOff, Upload, CheckCircle, Loader2 } from 'lucide-react';
+import { Home, Info, AlertTriangle, Search, ArrowLeft, FileText, ChevronRight, Settings, Trash2, Newspaper, Lock, LogOut, Printer, Menu, X, Edit3, Save, PlusCircle, Cloud, CloudOff, Upload, CheckCircle, Loader2 } from 'lucide-react';
 
 // --- IMPORT NECESSARI PER FIREBASE ---
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, onSnapshot, doc, deleteDoc, setDoc, updateDoc, writeBatch, getDocs } from "firebase/firestore";
+import { getFirestore, collection, onSnapshot, doc, deleteDoc, setDoc, writeBatch } from "firebase/firestore";
 
 // --- CONFIGURAZIONE FIREBASE ---
+// NOTA: Assicurati che le regole di Firestore siano impostate su "allow read, write: if true;"
+// per i test, altrimenti le scritture falliranno.
 const firebaseConfig = {
   apiKey: "AIzaSyClzaGSuhKFnrQ_VOmJNIZXt3Yjp8ASCNU", 
   authDomain: "politigaffee.firebaseapp.com",
@@ -20,12 +22,12 @@ let dbFire = null;
 try {
     const app = initializeApp(firebaseConfig);
     dbFire = getFirestore(app);
-    console.log("Firebase inizializzato con successo.");
+    console.log("Firebase inizializzato.");
 } catch (e) {
     console.error("Errore critico connessione Firebase:", e);
 }
 
-// Password Admin
+// Password Admin (Demo Client-Side)
 const ADMIN_PASSWORD = "admin123"; 
 
 const getImageUrl = (url) => {
@@ -39,35 +41,17 @@ const getImageUrl = (url) => {
 
 // --- DATABASE DI BACKUP (SEED DATA) ---
 const staticPoliticians = [
-    // DESTRA / GOVERNO
     { id: 'meloni', name: 'Giorgia Meloni', party: 'FdI', role: 'Presidente del Consiglio', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Giorgia&backgroundColor=ffdfbf', banner: 'bg-blue-900', bio: "Io sono Giorgia, sono una donna, sono una madre, sono cristiana.", stats: { followers: '3.1M', gaffes: 112, incoherences: 88 }, posts: [], inconsistencies: [] },
-    { id: 'salvini', name: 'Matteo Salvini', party: 'Lega', role: 'Ministro Infrastrutture', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Matteo&backgroundColor=b6e3f4', banner: 'bg-green-700', bio: "Prima gli italiani, poi il Ponte, poi il terzo mandato.", stats: { followers: '2.5M', gaffes: 1420, incoherences: 'Over 9000' }, posts: [], inconsistencies: [] },
-    { id: 'tajani', name: 'Antonio Tajani', party: 'FI', role: 'Ministro Esteri', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Antonio&backgroundColor=c0aede', banner: 'bg-blue-600', bio: "L'Europa, il PPE, l'eredità di Berlusconi.", stats: { followers: '800k', gaffes: 45, incoherences: 12 }, posts: [], inconsistencies: [] },
-    { id: 'santanche', name: 'Daniela Santanchè', party: 'FdI', role: 'Ministro Turismo', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Daniela&backgroundColor=ffe4e1', banner: 'bg-pink-700', bio: "Open to Meraviglia. Il turismo è il nostro petrolio (e il Twiga).", stats: { followers: '450k', gaffes: 85, incoherences: 20 }, posts: [], inconsistencies: [] },
-    { id: 'bernini', name: 'Anna Maria Bernini', party: 'FI', role: 'Ministro Università', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AnnaMaria&backgroundColor=e6e6fa', banner: 'bg-indigo-700', bio: "L'università è eccellenza, anche se i fondi mancano.", stats: { followers: '200k', gaffes: 30, incoherences: 8 }, posts: [], inconsistencies: [] },
-    { id: 'lollobrigida', name: 'Francesco Lollobrigida', party: 'FdI', role: 'Ministro Agricoltura', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lollo&backgroundColor=d1fae5', banner: 'bg-green-800', bio: "Difensore della sovranità alimentare e dei treni puntuali.", stats: { followers: '150k', gaffes: 55, incoherences: 5 }, posts: [], inconsistencies: [] },
-    { id: 'sangiuliano', name: 'Gennaro Sangiuliano', party: 'Indip.', role: 'Ex Ministro Cultura', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Genny&backgroundColor=e5e7eb', banner: 'bg-gray-700', bio: "Ho letto molti libri, forse troppi.", stats: { followers: '100k', gaffes: 99, incoherences: 2 }, posts: [], inconsistencies: [] },
-    { id: 'valditara', name: 'Giuseppe Valditara', party: 'Lega', role: 'Ministro Istruzione', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Valdi&backgroundColor=fef3c7', banner: 'bg-yellow-600', bio: "Il merito prima di tutto.", stats: { followers: '80k', gaffes: 40, incoherences: 10 }, posts: [], inconsistencies: [] },
-    { id: 'nordio', name: 'Carlo Nordio', party: 'FdI', role: 'Ministro Giustizia', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carlo&backgroundColor=bfdbfe', banner: 'bg-slate-700', bio: "Garantista sempre, tranne quando serve il pugno duro.", stats: { followers: '50k', gaffes: 25, incoherences: 15 }, posts: [], inconsistencies: [] },
-    { id: 'crosetto', name: 'Guido Crosetto', party: 'FdI', role: 'Ministro Difesa', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guido&backgroundColor=cbd5e1', banner: 'bg-stone-700', bio: "Il gigante buono (ma armato).", stats: { followers: '300k', gaffes: 20, incoherences: 5 }, posts: [], inconsistencies: [] },
-    { id: 'piantedosi', name: 'Matteo Piantedosi', party: 'Indip.', role: 'Ministro Interni', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Piante&backgroundColor=9ca3af', banner: 'bg-gray-800', bio: "Carico residuo e gestione flussi.", stats: { followers: '40k', gaffes: 35, incoherences: 2 }, posts: [], inconsistencies: [] },
-    { id: 'roccella', name: 'Eugenia Roccella', party: 'FdI', role: 'Ministro Famiglia', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eugenia&backgroundColor=fce7f3', banner: 'bg-pink-900', bio: "La famiglia tradizionale prima di tutto.", stats: { followers: '30k', gaffes: 42, incoherences: 8 }, posts: [], inconsistencies: [] },
-    { id: 'pichetto', name: 'Gilberto Pichetto Fratin', party: 'FI', role: 'Ministro Ambiente', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Gilberto&backgroundColor=dbeafe', banner: 'bg-cyan-700', bio: "Transizione energetica, ma con calma.", stats: { followers: '20k', gaffes: 15, incoherences: 3 }, posts: [], inconsistencies: [] },
-    { id: 'urso', name: 'Adolfo Urso', party: 'FdI', role: 'Ministro Imprese', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Adolfo&backgroundColor=fee2e2', banner: 'bg-red-900', bio: "Made in Italy su tutto.", stats: { followers: '25k', gaffes: 10, incoherences: 4 }, posts: [], inconsistencies: [] },
-    { id: 'delmastro', name: 'Andrea Delmastro', party: 'FdI', role: 'Sottosegretario', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Delmastro&backgroundColor=ffedd5', banner: 'bg-orange-800', bio: "Le carte sono riservate, ma non troppo.", stats: { followers: '45k', gaffes: 18, incoherences: 2 }, posts: [], inconsistencies: [] },
-    // OPPOSIZIONE
+    { id: 'salvini', name: 'Matteo Salvini', party: 'Lega', role: 'Ministro Infrastrutture', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Matteo&backgroundColor=b6e3f4', banner: 'bg-green-700', bio: "Prima gli italiani, poi il Ponte, poi il terzo mandato.", stats: { followers: '2.5M', gaffes: 1420, incoherences: 9000 }, posts: [], inconsistencies: [] },
     { id: 'schlein', name: 'Elly Schlein', party: 'PD', role: 'Segretaria PD', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Elly&backgroundColor=ffdfbf', banner: 'bg-red-600', bio: "Non ci hanno visti arrivare.", stats: { followers: '1.2M', gaffes: 68, incoherences: 45 }, posts: [], inconsistencies: [] },
     { id: 'conte', name: 'Giuseppe Conte', party: 'M5S', role: 'Presidente M5S', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Giuseppe&backgroundColor=fef08a', banner: 'bg-yellow-500', bio: "Avvocato del popolo.", stats: { followers: '4.1M', gaffes: 50, incoherences: 60 }, posts: [], inconsistencies: [] },
     { id: 'renzi', name: 'Matteo Renzi', party: 'IV', role: 'Senatore', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Renzi&backgroundColor=f3e8ff', banner: 'bg-purple-600', bio: "First reaction: shock.", stats: { followers: '1.5M', gaffes: 120, incoherences: 200 }, posts: [], inconsistencies: [] },
-    { id: 'calenda', name: 'Carlo Calenda', party: 'Azione', role: 'Senatore', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Calenda&backgroundColor=bfdbfe', banner: 'bg-blue-500', bio: "Twitter è il mio ufficio stampa.", stats: { followers: '600k', gaffes: 40, incoherences: 30 }, posts: [], inconsistencies: [] },
-    { id: 'fratoianni', name: 'Nicola Fratoianni', party: 'AVS', role: 'Deputato', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Nicola&backgroundColor=ef4444', banner: 'bg-red-500', bio: "Sinistra Sinistra.", stats: { followers: '200k', gaffes: 15, incoherences: 10 }, posts: [], inconsistencies: [] },
-    { id: 'bonelli', name: 'Angelo Bonelli', party: 'AVS', role: 'Deputato', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bonelli&backgroundColor=86efac', banner: 'bg-green-500', bio: "Sassi dell'Adige e crisi climatica.", stats: { followers: '100k', gaffes: 20, incoherences: 5 }, posts: [], inconsistencies: [] },
-    { id: 'deluca', name: 'Vincenzo De Luca', party: 'PD', role: 'Presidente Campania', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=DeLuca&backgroundColor=fee2e2', banner: 'bg-red-800', bio: "Lanciafiamme e pinguini.", stats: { followers: '2M', gaffes: 300, incoherences: 10 }, posts: [], inconsistencies: [] }
+    { id: 'calenda', name: 'Carlo Calenda', party: 'Azione', role: 'Senatore', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Calenda&backgroundColor=bfdbfe', banner: 'bg-blue-500', bio: "Twitter è il mio ufficio stampa.", stats: { followers: '600k', gaffes: 40, incoherences: 30 }, posts: [], inconsistencies: [] }
 ];
 
 const App = () => {
     // STATE
-    const [politicians, setPoliticians] = useState([]); // Parte vuoto, si riempie dal DB
+    const [politicians, setPoliticians] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [view, setView] = useState('home'); 
     const [selectedProfile, setSelectedProfile] = useState(null);
@@ -75,6 +59,7 @@ const App = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showFullRegister, setShowFullRegister] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [errorMsg, setErrorMsg] = useState(null); // Nuovo stato per errori UI
     
     // Admin State
     const [isAdmin, setIsAdmin] = useState(false);
@@ -90,21 +75,17 @@ const App = () => {
 
     // --- SINCRONIZZAZIONE DATI ---
     useEffect(() => {
-        // Se Firebase non c'è (errore init), carica statico
         if (!dbFire) {
             setPoliticians(staticPoliticians);
             setLoading(false);
             return;
         }
 
-        // Ascolta il DB Reale
         const unsubscribe = onSnapshot(collection(dbFire, "politicians"), (snapshot) => {
             if (snapshot.empty) {
-                // DB Vuoto: non caricare nulla, l'utente vedrà l'opzione "Carica Dati"
                 setPoliticians([]); 
                 setIsDbOnline(true);
             } else {
-                // Protezione contro dati parziali: se manca 'posts', metti array vuoto
                 const data = snapshot.docs.map(doc => {
                     const d = doc.data();
                     return {
@@ -120,8 +101,9 @@ const App = () => {
             }
             setLoading(false);
         }, (error) => {
-            console.error("Errore lettura DB (Permessi o Rete):", error);
-            // Fallback locale in caso di errore
+            console.error("Errore lettura DB:", error);
+            setErrorMsg("Impossibile leggere dal database. Verifica le regole di Firestore.");
+            // Fallback locale in caso di errore di permessi
             setPoliticians(staticPoliticians);
             setIsDbOnline(false);
             setLoading(false);
@@ -130,42 +112,18 @@ const App = () => {
         return () => unsubscribe();
     }, []);
 
-    // --- FUNZIONI DATABASE ---
-    const seedDatabase = async () => {
-        if (!dbFire) return alert("Firebase non connesso.");
-        if (!window.confirm("Caricare i 22 politici nel database online?")) return;
-        
-        setSeeding(true);
-        const batch = writeBatch(dbFire);
-        
-        staticPoliticians.forEach(pol => {
-            const ref = doc(dbFire, "politicians", pol.id);
-            // Assicuriamoci che i campi array esistano
-            const safePol = {
-                ...pol,
-                posts: pol.posts || [],
-                inconsistencies: pol.inconsistencies || []
-            };
-            batch.set(ref, safePol);
-        });
-
-        try {
-            await batch.commit();
-            alert("Database popolato! Aggiorna la pagina se necessario.");
-        } catch (e) {
-            console.error("Errore Seed:", e);
-            alert("Errore upload: " + e.message);
-        }
-        setSeeding(false);
-    };
-
     // --- CRUD GENERICO ---
     const saveData = async (collectionName, docId, data, merge = true) => {
+        setErrorMsg(null);
         if (dbFire) {
             try {
                 await setDoc(doc(dbFire, collectionName, docId), data, { merge });
                 return true;
-            } catch(e) { alert("Errore Cloud: " + e.message); return false; }
+            } catch(e) { 
+                console.error(e);
+                setErrorMsg("Errore Salvataggio: " + e.message + ". Verifica i permessi.");
+                return false; 
+            }
         } else {
             // Fallback locale
             setPoliticians(prev => {
@@ -178,15 +136,47 @@ const App = () => {
     };
 
     const deleteData = async (collectionName, docId) => {
+        setErrorMsg(null);
         if (dbFire) {
             try {
                 await deleteDoc(doc(dbFire, collectionName, docId));
                 return true;
-            } catch(e) { alert("Errore Cloud: " + e.message); return false; }
+            } catch(e) { 
+                setErrorMsg("Errore Eliminazione: " + e.message); 
+                return false; 
+            }
         } else {
             setPoliticians(prev => prev.filter(p => p.id !== docId));
             return true;
         }
+    };
+
+    const seedDatabase = async () => {
+        if (!dbFire) return alert("Firebase non connesso.");
+        if (!window.confirm("Caricare i dati statici nel database online? Sovrascriverà i dati esistenti.")) return;
+        
+        setSeeding(true);
+        setErrorMsg(null);
+        const batch = writeBatch(dbFire);
+        
+        staticPoliticians.forEach(pol => {
+            const ref = doc(dbFire, "politicians", pol.id);
+            const safePol = {
+                ...pol,
+                posts: pol.posts || [],
+                inconsistencies: pol.inconsistencies || []
+            };
+            batch.set(ref, safePol);
+        });
+
+        try {
+            await batch.commit();
+            alert("Database popolato con successo!");
+        } catch (e) {
+            console.error("Errore Seed:", e);
+            setErrorMsg("Errore caricamento dati iniziali: " + e.message);
+        }
+        setSeeding(false);
     };
 
     // --- HANDLERS ---
@@ -202,41 +192,39 @@ const App = () => {
 
     const handleSavePoliticianProfile = async () => {
         if (!profileForm.name) return;
-        const polId = newPoliticianMode ? profileForm.name.toLowerCase().replace(/\s+/g, '') : editingPolitician.id;
+        const polId = newPoliticianMode ? profileForm.name.toLowerCase().replace(/[^a-z0-9]/g, '') : editingPolitician.id;
         
-        // Prepariamo i dati sicuri
         const polData = { 
             ...profileForm, 
             id: polId,
-            // Se è nuovo inizializza array vuoti, se esiste mantieni i vecchi
             posts: newPoliticianMode ? [] : (editingPolitician.posts || []),
             inconsistencies: newPoliticianMode ? [] : (editingPolitician.inconsistencies || []),
             stats: newPoliticianMode ? { followers: '0', gaffes: 0, incoherences: 0 } : (editingPolitician.stats || { followers: '0', gaffes: 0, incoherences: 0 })
         };
 
-        await saveData("politicians", polId, polData);
+        const success = await saveData("politicians", polId, polData);
         
-        if (newPoliticianMode) {
-            handleSelectPolitician(polData);
-        } else {
-            setEditingPolitician(polData); // Aggiorna la vista corrente
+        if (success) {
+            if (newPoliticianMode) {
+                handleSelectPolitician(polData);
+            } else {
+                setEditingPolitician(polData);
+            }
+            alert("Profilo salvato!");
         }
-        alert("Salvato!");
     };
 
     const handleDeletePolitician = async (e, politicianId) => {
         e.stopPropagation();
         if (!window.confirm("Eliminare definitivamente?")) return;
-        await deleteData("politicians", politicianId);
-        if (editingPolitician?.id === politicianId) setEditingPolitician(null);
+        const success = await deleteData("politicians", politicianId);
+        if (success && editingPolitician?.id === politicianId) setEditingPolitician(null);
     };
 
     const handleSavePost = async () => {
         if (!editingPolitician || !postForm.title) return;
         
-        // Assicuriamoci che posts sia un array
         let currentPosts = editingPolitician.posts || [];
-        
         const newPostData = { ...postForm, id: postForm.id || Date.now() };
         let updatedPosts;
 
@@ -248,11 +236,13 @@ const App = () => {
 
         const updatedPol = { ...editingPolitician, posts: updatedPosts };
         
-        // Aggiorna solo il campo posts del documento
-        await saveData("politicians", editingPolitician.id, { posts: updatedPosts }, true);
+        // Fix: Aggiorna lo stato locale SOLO se il salvataggio DB ha successo
+        const success = await saveData("politicians", editingPolitician.id, { posts: updatedPosts }, true);
         
-        setEditingPolitician(updatedPol);
-        resetPostForm();
+        if (success) {
+            setEditingPolitician(updatedPol);
+            resetPostForm();
+        }
     };
 
     const handleDeletePost = async (postId) => {
@@ -261,17 +251,16 @@ const App = () => {
         const updatedPosts = currentPosts.filter(p => p.id !== postId);
         const updatedPol = { ...editingPolitician, posts: updatedPosts };
         
-        await saveData("politicians", editingPolitician.id, { posts: updatedPosts }, true);
-        setEditingPolitician(updatedPol);
+        const success = await saveData("politicians", editingPolitician.id, { posts: updatedPosts }, true);
+        if (success) {
+            setEditingPolitician(updatedPol);
+        }
     };
 
     // --- UI HELPERS ---
     const handleSelectPolitician = (p) => { 
-        // Clone profondo per evitare riferimenti mutabili
         const safeP = JSON.parse(JSON.stringify(p));
-        // Assicura che posts esista
         if (!safeP.posts) safeP.posts = [];
-        
         setEditingPolitician(safeP); 
         setProfileForm(safeP); 
         setEditMode('posts'); 
@@ -286,18 +275,20 @@ const App = () => {
         setEditMode('profile'); 
     };
 
+    const resetPostForm = () => {
+        setPostForm({ id: null, title: '', type: 'gaffe', content: '', date: '', source: '', body: '', image: '' });
+    };
+
     const navigateTo = (v) => { setView(v); setMobileMenuOpen(false); };
     const handleProfileClick = (p) => { setSelectedProfile(p); setShowFullRegister(false); setView('profile'); setMobileMenuOpen(false); };
     const handlePostClick = (p) => { setSelectedPost(p); setView('article'); };
     const goBackToProfile = () => { setView('profile'); setSelectedPost(null); };
 
-    // Filtri e liste sicure
     const filteredPoliticians = politicians.filter(p => 
         (p.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
         (p.party?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
 
-    // Gestione array sicura per evitare crash
     const gaffePosts = (selectedProfile?.posts || []).filter(p => p.type === 'gaffe' || p.type === 'quote');
     const newsPosts = (selectedProfile?.posts || []).filter(p => p.type === 'news');
     const visibleGaffes = showFullRegister ? gaffePosts : gaffePosts.slice(0, 5);
@@ -312,23 +303,32 @@ const App = () => {
                 body { font-family: 'JetBrains Mono', monospace; }
                 h1, h2, h3, h4, .serif-font { font-family: 'Playfair Display', serif; }
                 ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: #e5e5e5; } ::-webkit-scrollbar-thumb { background: #333; }
+                ::-webkit-scrollbar-thumb:hover { background: #000; }
                 .pattern-grid { background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px; }`}
             </style>
 
-            {/* Sidebar */}
+            {/* ERROR BANNER */}
+            {errorMsg && (
+                <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-xs font-bold p-2 text-center z-[100] flex justify-between items-center px-4">
+                    <span>⚠️ {errorMsg}</span>
+                    <button onClick={() => setErrorMsg(null)}><X size={14}/></button>
+                </div>
+            )}
+
+            {/* Sidebar Desktop */}
             <div className="hidden md:flex flex-col w-64 bg-[#F4F1EA] border-r border-black p-0 z-10">
                 <div className="p-4 border-b border-black bg-yellow-400">
                     <div className="text-2xl font-black tracking-tighter flex items-center gap-2 serif-font uppercase"><AlertTriangle className="text-black stroke-[3]" size={24} /> Politi<br/>Gaffe</div>
                 </div>
                 <nav className="flex-1 p-3 space-y-2">
-                    <button onClick={() => setView('home')} className={`w-full flex items-center gap-3 px-3 py-2 border border-black text-sm transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] ${view === 'home' ? 'bg-black text-white' : 'bg-white text-black'}`}><Home size={16} /> <span className="font-bold">Dashboard</span></button>
-                    <button onClick={() => setView('about')} className={`w-full flex items-center gap-3 px-3 py-2 border border-black text-sm transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] ${view === 'about' ? 'bg-black text-white' : 'bg-white text-black'}`}><Info size={16} /> <span className="font-bold">Manifesto</span></button>
+                    <button onClick={() => setView('home')} className={`w-full flex items-center gap-3 px-3 py-2 border border-black text-sm transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] ${view === 'home' ? 'bg-black text-white' : 'bg-white text-black'}`}><Home size={16} /> <span className="font-bold">Dashboard</span></button>
+                    <button onClick={() => setView('about')} className={`w-full flex items-center gap-3 px-3 py-2 border border-black text-sm transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] ${view === 'about' ? 'bg-black text-white' : 'bg-white text-black'}`}><Info size={16} /> <span className="font-bold">Manifesto</span></button>
                 </nav>
                 <div className="p-4 border-t border-black bg-white flex justify-between items-center">
                     <div className="flex flex-col">
-                        <p className="text-[10px] leading-relaxed font-mono text-gray-500">v.2.2 Live</p>
+                        <p className="text-[10px] leading-relaxed font-mono text-gray-500">v.2.3 Fix</p>
                         <div className="flex items-center gap-1 text-[9px] font-bold uppercase">
-                            {isDbOnline ? <><Cloud size={10} className="text-green-600"/> Online</> : <><CloudOff size={10} className="text-red-500"/> Offline</>}
+                            {isDbOnline ? <><Cloud size={10} className="text-green-600"/> Online</> : <><CloudOff size={10} className="text-red-500"/> Offline / Local</>}
                         </div>
                     </div>
                     <button onClick={() => isAdmin ? setView('admin') : setView('login')} className="text-gray-400 hover:text-black transition">{isAdmin ? <Settings size={14} /> : <Lock size={14} />}</button>
@@ -365,38 +365,38 @@ const App = () => {
                 </div>
 
                 {view === 'home' && (
-                    <div className="max-w-5xl mx-auto p-4 md:p-8 pb-24">
+                    <div className="max-w-6xl mx-auto p-4 md:p-8 pb-24">
                         <header className="mb-8 pt-4 border-b-2 border-black pb-6">
                             <h1 className="text-3xl md:text-5xl font-black text-black mb-3 serif-font uppercase tracking-tight">Osservatorio Politico</h1>
                             <p className="text-sm md:text-base text-gray-700 max-w-3xl font-medium leading-relaxed font-serif">
-                                Monitoraggio indipendente. {isDbOnline ? <span className="text-green-600 font-bold">● ONLINE</span> : <span className="text-orange-600 font-bold">● LOCALE (Demo)</span>}
+                                Monitoraggio indipendente delle dichiarazioni pubbliche. {isDbOnline ? <span className="text-green-600 font-bold bg-green-100 px-2 py-0.5 rounded-full text-xs border border-green-600">● ONLINE</span> : <span className="text-orange-600 font-bold bg-orange-100 px-2 py-0.5 rounded-full text-xs border border-orange-600">● MODO LOCALE</span>}
                             </p>
                         </header>
                         <div className="mb-8 flex items-center border border-black bg-white p-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-w-lg">
                             <div className="bg-black text-white p-2"><Search size={18} /></div>
-                            <input type="text" placeholder="CERCA..." className="w-full pl-3 pr-3 py-2 bg-transparent focus:outline-none text-sm font-bold uppercase" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                            <input type="text" placeholder="CERCA UN POLITICO..." className="w-full pl-3 pr-3 py-2 bg-transparent focus:outline-none text-sm font-bold uppercase" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
                         {politicians.length === 0 ? (
-                            <div className="p-10 border-2 border-dashed border-gray-400 text-center text-gray-500 font-mono">
-                                <p className="mb-4">IL DATABASE È VUOTO</p>
-                                <p className="text-xs">Vai su Admin &rarr; "Carica Dati Iniziali" per ripristinare.</p>
+                            <div className="p-10 border-2 border-dashed border-gray-400 text-center text-gray-500 font-mono bg-gray-50">
+                                <p className="mb-4 font-bold">IL DATABASE È VUOTO</p>
+                                <p className="text-xs">Vai su Admin (Lucchetto in basso) &rarr; "Carica Dati Iniziali" per ripristinare.</p>
                             </div>
                         ) : (
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {filteredPoliticians.map(p => (
-                                    <div key={p.id} onClick={() => handleProfileClick(p)} className="group cursor-pointer bg-white border border-black p-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all">
+                                    <div key={p.id} onClick={() => handleProfileClick(p)} className="group cursor-pointer bg-white border border-black p-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all duration-200">
                                         <div className="flex border-b border-black">
                                             <div className="w-24 h-24 border-r border-black bg-gray-100 shrink-0 overflow-hidden"><img src={getImageUrl(p.avatar)} alt={p.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300" /></div>
                                             <div className="p-3 flex flex-col justify-center flex-1 bg-[#fffdf5] min-w-0">
-                                                <h3 className="text-lg font-bold serif-font leading-none mb-1 truncate">{p.name}</h3>
+                                                <h3 className="text-lg font-bold serif-font leading-none mb-1 truncate group-hover:underline">{p.name}</h3>
                                                 <span className="text-[10px] font-bold uppercase bg-black text-white w-fit px-1.5 py-0.5">{p.party}</span>
                                                 <span className="text-[10px] mt-1 truncate font-mono text-gray-500">{p.role}</span>
                                             </div>
                                         </div>
                                         <div className="px-3 py-2 flex justify-between items-center bg-white">
                                             <div className="flex gap-3 text-[10px] font-bold font-mono">
-                                                <span className="text-red-600">⚠ {p.stats.gaffes || 0}</span>
-                                                <span className="text-blue-600">⇄ {p.stats.incoherences || 0}</span>
+                                                <span className="text-red-600 flex items-center gap-1">⚠ {p.posts ? p.posts.filter(x=>x.type!=='news').length : 0}</span>
+                                                <span className="text-blue-600 flex items-center gap-1">📰 {p.posts ? p.posts.filter(x=>x.type==='news').length : 0}</span>
                                             </div>
                                             <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                         </div>
@@ -442,7 +442,7 @@ const App = () => {
                                                 <div className="w-16 h-16 bg-gray-200 shrink-0 border border-black overflow-hidden"><img src={getImageUrl(post.image)} className="w-full h-full object-cover" alt="news" /></div>
                                                 <div><div className="flex gap-2 text-[9px] font-bold uppercase text-blue-700 mb-0.5"><span>{post.source}</span><span className="text-gray-400">• {post.date}</span></div><h4 className="font-serif font-bold text-sm leading-tight mb-1 group-hover:underline">{post.title}</h4></div>
                                             </div>
-                                        )) : <div className="p-4 text-center border border-dashed border-gray-400 text-xs text-gray-500">Nessuna notizia.</div>}
+                                        )) : <div className="p-4 text-center border border-dashed border-gray-400 text-xs text-gray-500">Nessuna notizia recente.</div>}
                                     </div>
                                 </div>
                             </div>
@@ -490,22 +490,20 @@ const App = () => {
                         <header className="mb-8 pb-4 border-b border-black flex justify-between items-center">
                             <div className="flex flex-col">
                                 <h1 className="text-2xl md:text-3xl font-black uppercase serif-font">Admin Panel</h1>
-                                <p className="text-xs text-gray-500 font-mono mt-1">Status: {dbFire ? <span className="text-green-600 font-bold">CLOUD CONNESSO</span> : <span className="text-red-600 font-bold">SOLO LOCALE</span>}</p>
+                                <p className="text-xs text-gray-500 font-mono mt-1">Status: {isDbOnline ? <span className="text-green-600 font-bold">CLOUD CONNESSO</span> : <span className="text-red-600 font-bold">LOCALE (Errore/Offline)</span>}</p>
                             </div>
                             <button onClick={handleLogout} className="flex items-center gap-1 text-xs uppercase font-bold text-red-600 hover:text-red-800"><LogOut size={14}/> Esci</button>
                         </header>
                         
-                        {dbFire && (
-                            <div className="mb-8 p-4 bg-orange-100 border border-orange-500 flex flex-col md:flex-row justify-between items-center gap-4">
-                                <div>
-                                    <h3 className="font-bold text-orange-900 uppercase text-sm flex items-center gap-2"><Upload size={18}/> Inizializzazione Database</h3>
-                                    <p className="text-xs text-orange-800">Premi qui per caricare i 22 politici statici nel Cloud. Fallo solo la prima volta.</p>
-                                </div>
-                                <button onClick={seedDatabase} disabled={seeding} className="bg-orange-600 text-white px-4 py-2 font-bold uppercase text-xs hover:bg-orange-700 disabled:opacity-50 flex items-center gap-2">
-                                    {seeding ? "Caricamento..." : "Carica Dati Iniziali"} <CheckCircle size={16}/>
-                                </button>
+                        <div className="mb-8 p-4 bg-orange-100 border border-orange-500 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div>
+                                <h3 className="font-bold text-orange-900 uppercase text-sm flex items-center gap-2"><Upload size={18}/> Inizializzazione Database</h3>
+                                <p className="text-xs text-orange-800">Premi qui per caricare i dati statici nel Cloud. Utile se il DB è vuoto.</p>
                             </div>
-                        )}
+                            <button onClick={seedDatabase} disabled={seeding || !isDbOnline} className="bg-orange-600 text-white px-4 py-2 font-bold uppercase text-xs hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                                {seeding ? "Caricamento..." : "Carica Dati Iniziali"} <CheckCircle size={16}/>
+                            </button>
+                        </div>
 
                         <div className="grid md:grid-cols-3 gap-8">
                             <div className="border border-black p-4 bg-gray-50 h-[80vh] flex flex-col">
