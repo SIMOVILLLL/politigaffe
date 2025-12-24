@@ -20,7 +20,7 @@ let dbFire = null;
 try {
     const app = initializeApp(firebaseConfig);
     dbFire = getFirestore(app);
-    console.log("Firebase connesso correttamente.");
+    console.log("Firebase inizializzato con successo.");
 } catch (e) {
     console.error("Errore critico connessione Firebase:", e);
 }
@@ -90,7 +90,7 @@ const App = () => {
 
     // --- SINCRONIZZAZIONE DATI ---
     useEffect(() => {
-        // Se Firebase non c'è, carica i dati statici e basta
+        // Se Firebase non c'è (errore init), carica statico
         if (!dbFire) {
             setPoliticians(staticPoliticians);
             setLoading(false);
@@ -99,13 +99,29 @@ const App = () => {
 
         // Ascolta il DB Reale
         const unsubscribe = onSnapshot(collection(dbFire, "politicians"), (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setPoliticians(data);
-            setIsDbOnline(true);
+            if (snapshot.empty) {
+                // DB Vuoto: non caricare nulla, l'utente vedrà l'opzione "Carica Dati"
+                setPoliticians([]); 
+                setIsDbOnline(true);
+            } else {
+                // Protezione contro dati parziali: se manca 'posts', metti array vuoto
+                const data = snapshot.docs.map(doc => {
+                    const d = doc.data();
+                    return {
+                        id: doc.id,
+                        ...d,
+                        posts: d.posts || [],
+                        inconsistencies: d.inconsistencies || [],
+                        stats: d.stats || { followers: '0', gaffes: 0, incoherences: 0 }
+                    };
+                });
+                setPoliticians(data);
+                setIsDbOnline(true);
+            }
             setLoading(false);
         }, (error) => {
-            console.error("Errore lettura DB:", error);
-            // Fallback in caso di errore (es. permessi o offline)
+            console.error("Errore lettura DB (Permessi o Rete):", error);
+            // Fallback locale in caso di errore
             setPoliticians(staticPoliticians);
             setIsDbOnline(false);
             setLoading(false);
@@ -137,6 +153,7 @@ const App = () => {
             await batch.commit();
             alert("Database popolato! Aggiorna la pagina se necessario.");
         } catch (e) {
+            console.error("Errore Seed:", e);
             alert("Errore upload: " + e.message);
         }
         setSeeding(false);
@@ -280,6 +297,7 @@ const App = () => {
         (p.party?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
 
+    // Gestione array sicura per evitare crash
     const gaffePosts = (selectedProfile?.posts || []).filter(p => p.type === 'gaffe' || p.type === 'quote');
     const newsPosts = (selectedProfile?.posts || []).filter(p => p.type === 'news');
     const visibleGaffes = showFullRegister ? gaffePosts : gaffePosts.slice(0, 5);
@@ -308,7 +326,7 @@ const App = () => {
                 </nav>
                 <div className="p-4 border-t border-black bg-white flex justify-between items-center">
                     <div className="flex flex-col">
-                        <p className="text-[10px] leading-relaxed font-mono text-gray-500">v.2.1 Stable</p>
+                        <p className="text-[10px] leading-relaxed font-mono text-gray-500">v.2.2 Live</p>
                         <div className="flex items-center gap-1 text-[9px] font-bold uppercase">
                             {isDbOnline ? <><Cloud size={10} className="text-green-600"/> Online</> : <><CloudOff size={10} className="text-red-500"/> Offline</>}
                         </div>
