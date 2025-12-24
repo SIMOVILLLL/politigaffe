@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Home, Info, AlertTriangle, Search, ArrowLeft, ArrowRightLeft, FileText, Eye, ChevronRight, Settings, Trash2, Newspaper, Lock, LogOut, Printer, Menu, X, Edit3, Save, PlusCircle } from 'lucide-react';
 
 // --- CONFIGURAZIONE ---
-// Password semplice per garantire il funzionamento su mobile
 const ADMIN_PASSWORD = "admin123"; 
 
 // --- UTILITY IMMAGINI ---
@@ -18,7 +17,6 @@ const getImageUrl = (url) => {
 // --- DATABASE STATICO (22 Politici) ---
 const initialDb = {
     politicians: [
-        // DESTRA / GOVERNO
         {
             id: 'meloni', name: 'Giorgia Meloni', party: 'FdI', role: 'Presidente del Consiglio',
             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Giorgia&backgroundColor=ffdfbf', banner: 'bg-blue-900',
@@ -40,91 +38,6 @@ const initialDb = {
             stats: { followers: '800k', gaffes: 45, incoherences: 12 },
             posts: [], inconsistencies: []
         },
-        {
-            id: 'santanche', name: 'Daniela Santanchè', party: 'FdI', role: 'Ministro Turismo',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Daniela&backgroundColor=ffe4e1', banner: 'bg-pink-700',
-            bio: "Open to Meraviglia. Il turismo è il nostro petrolio (e il Twiga).",
-            stats: { followers: '450k', gaffes: 85, incoherences: 20 },
-            posts: [], inconsistencies: []
-        },
-        {
-            id: 'bernini', name: 'Anna Maria Bernini', party: 'Forza Italia', role: 'Ministro Università',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AnnaMaria&backgroundColor=e6e6fa', banner: 'bg-indigo-700',
-            bio: "L'università è eccellenza, anche se i fondi mancano.",
-            stats: { followers: '200k', gaffes: 30, incoherences: 8 },
-            posts: [], inconsistencies: []
-        },
-        {
-            id: 'lollobrigida', name: 'Francesco Lollobrigida', party: 'FdI', role: 'Ministro Agricoltura',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lollo&backgroundColor=d1fae5', banner: 'bg-green-800',
-            bio: "Difensore della sovranità alimentare e dei treni puntuali.",
-            stats: { followers: '150k', gaffes: 55, incoherences: 5 },
-            posts: [], inconsistencies: []
-        },
-        {
-            id: 'sangiuliano', name: 'Gennaro Sangiuliano', party: 'Indipendente (Area FdI)', role: 'Ex Ministro Cultura',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Genny&backgroundColor=e5e7eb', banner: 'bg-gray-700',
-            bio: "Ho letto molti libri, forse troppi. Galileo e Colombo lo sanno.",
-            stats: { followers: '100k', gaffes: 99, incoherences: 2 },
-            posts: [], inconsistencies: []
-        },
-        {
-            id: 'valditara', name: 'Giuseppe Valditara', party: 'Lega', role: 'Ministro Istruzione',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Valdi&backgroundColor=fef3c7', banner: 'bg-yellow-600',
-            bio: "Il merito prima di tutto. E un po' di umiliazione che fa bene.",
-            stats: { followers: '80k', gaffes: 40, incoherences: 10 },
-            posts: [], inconsistencies: []
-        },
-        {
-            id: 'nordio', name: 'Carlo Nordio', party: 'FdI', role: 'Ministro Giustizia',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carlo&backgroundColor=bfdbfe', banner: 'bg-slate-700',
-            bio: "Garantista sempre, tranne quando serve il pugno duro.",
-            stats: { followers: '50k', gaffes: 25, incoherences: 15 },
-            posts: [], inconsistencies: []
-        },
-        {
-            id: 'crosetto', name: 'Guido Crosetto', party: 'FdI', role: 'Ministro Difesa',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guido&backgroundColor=cbd5e1', banner: 'bg-stone-700',
-            bio: "Il gigante buono (ma armato).",
-            stats: { followers: '300k', gaffes: 20, incoherences: 5 },
-            posts: [], inconsistencies: []
-        },
-        {
-            id: 'piantedosi', name: 'Matteo Piantedosi', party: 'Indipendente (Area Lega)', role: 'Ministro Interni',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Piante&backgroundColor=9ca3af', banner: 'bg-gray-800',
-            bio: "Carico residuo e gestione flussi. Ordine e disciplina.",
-            stats: { followers: '40k', gaffes: 35, incoherences: 2 },
-            posts: [], inconsistencies: []
-        },
-        {
-            id: 'roccella', name: 'Eugenia Roccella', party: 'FdI', role: 'Ministro Famiglia',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eugenia&backgroundColor=fce7f3', banner: 'bg-pink-900',
-            bio: "La famiglia tradizionale prima di tutto.",
-            stats: { followers: '30k', gaffes: 42, incoherences: 8 },
-            posts: [], inconsistencies: []
-        },
-        {
-            id: 'pichetto', name: 'Gilberto Pichetto Fratin', party: 'Forza Italia', role: 'Ministro Ambiente',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Gilberto&backgroundColor=dbeafe', banner: 'bg-cyan-700',
-            bio: "Transizione energetica, ma con calma.",
-            stats: { followers: '20k', gaffes: 15, incoherences: 3 },
-            posts: [], inconsistencies: []
-        },
-        {
-            id: 'urso', name: 'Adolfo Urso', party: 'FdI', role: 'Ministro Imprese',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Adolfo&backgroundColor=fee2e2', banner: 'bg-red-900',
-            bio: "Made in Italy su tutto, anche sui satelliti.",
-            stats: { followers: '25k', gaffes: 10, incoherences: 4 },
-            posts: [], inconsistencies: []
-        },
-        {
-            id: 'delmastro', name: 'Andrea Delmastro', party: 'FdI', role: 'Sottosegretario Giustizia',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Delmastro&backgroundColor=ffedd5', banner: 'bg-orange-800',
-            bio: "Le carte sono riservate, ma non troppo.",
-            stats: { followers: '45k', gaffes: 18, incoherences: 2 },
-            posts: [], inconsistencies: []
-        },
-        // OPPOSIZIONE
         {
             id: 'schlein', name: 'Elly Schlein', party: 'PD', role: 'Segretaria PD',
             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Elly&backgroundColor=ffdfbf', banner: 'bg-red-600',
@@ -154,9 +67,93 @@ const initialDb = {
             posts: [], inconsistencies: []
         },
         {
+            id: 'santanche', name: 'Daniela Santanchè', party: 'FdI', role: 'Ministro Turismo',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Daniela&backgroundColor=ffe4e1', banner: 'bg-pink-700',
+            bio: "Open to Meraviglia. Il turismo è il nostro petrolio (e il Twiga).",
+            stats: { followers: '450k', gaffes: 85, incoherences: 20 },
+            posts: [], inconsistencies: []
+        },
+        {
+            id: 'bernini', name: 'Anna Maria Bernini', party: 'Forza Italia', role: 'Ministro Università',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AnnaMaria&backgroundColor=e6e6fa', banner: 'bg-indigo-700',
+            bio: "L'università è eccellenza, anche se i fondi mancano.",
+            stats: { followers: '200k', gaffes: 30, incoherences: 8 },
+            posts: [], inconsistencies: []
+        },
+        {
+            id: 'lollobrigida', name: 'Francesco Lollobrigida', party: 'FdI', role: 'Ministro Agricoltura',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lollo&backgroundColor=d1fae5', banner: 'bg-green-800',
+            bio: "Difensore della sovranità alimentare e dei treni puntuali.",
+            stats: { followers: '150k', gaffes: 55, incoherences: 5 },
+            posts: [], inconsistencies: []
+        },
+        {
+            id: 'sangiuliano', name: 'Gennaro Sangiuliano', party: 'Indipendente', role: 'Ex Ministro Cultura',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Genny&backgroundColor=e5e7eb', banner: 'bg-gray-700',
+            bio: "Ho letto molti libri, forse troppi.",
+            stats: { followers: '100k', gaffes: 99, incoherences: 2 },
+            posts: [], inconsistencies: []
+        },
+        {
+            id: 'valditara', name: 'Giuseppe Valditara', party: 'Lega', role: 'Ministro Istruzione',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Valdi&backgroundColor=fef3c7', banner: 'bg-yellow-600',
+            bio: "Il merito prima di tutto. E un po' di umiliazione che fa bene.",
+            stats: { followers: '80k', gaffes: 40, incoherences: 10 },
+            posts: [], inconsistencies: []
+        },
+        {
+            id: 'nordio', name: 'Carlo Nordio', party: 'FdI', role: 'Ministro Giustizia',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carlo&backgroundColor=bfdbfe', banner: 'bg-slate-700',
+            bio: "Garantista sempre, tranne quando serve il pugno duro.",
+            stats: { followers: '50k', gaffes: 25, incoherences: 15 },
+            posts: [], inconsistencies: []
+        },
+        {
+            id: 'crosetto', name: 'Guido Crosetto', party: 'FdI', role: 'Ministro Difesa',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guido&backgroundColor=cbd5e1', banner: 'bg-stone-700',
+            bio: "Il gigante buono (ma armato).",
+            stats: { followers: '300k', gaffes: 20, incoherences: 5 },
+            posts: [], inconsistencies: []
+        },
+        {
+            id: 'piantedosi', name: 'Matteo Piantedosi', party: 'Indipendente', role: 'Ministro Interni',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Piante&backgroundColor=9ca3af', banner: 'bg-gray-800',
+            bio: "Carico residuo e gestione flussi.",
+            stats: { followers: '40k', gaffes: 35, incoherences: 2 },
+            posts: [], inconsistencies: []
+        },
+        {
+            id: 'roccella', name: 'Eugenia Roccella', party: 'FdI', role: 'Ministro Famiglia',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eugenia&backgroundColor=fce7f3', banner: 'bg-pink-900',
+            bio: "La famiglia tradizionale prima di tutto.",
+            stats: { followers: '30k', gaffes: 42, incoherences: 8 },
+            posts: [], inconsistencies: []
+        },
+        {
+            id: 'pichetto', name: 'Gilberto Pichetto Fratin', party: 'FI', role: 'Ministro Ambiente',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Gilberto&backgroundColor=dbeafe', banner: 'bg-cyan-700',
+            bio: "Transizione energetica, ma con calma.",
+            stats: { followers: '20k', gaffes: 15, incoherences: 3 },
+            posts: [], inconsistencies: []
+        },
+        {
+            id: 'urso', name: 'Adolfo Urso', party: 'FdI', role: 'Ministro Imprese',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Adolfo&backgroundColor=fee2e2', banner: 'bg-red-900',
+            bio: "Made in Italy su tutto.",
+            stats: { followers: '25k', gaffes: 10, incoherences: 4 },
+            posts: [], inconsistencies: []
+        },
+        {
+            id: 'delmastro', name: 'Andrea Delmastro', party: 'FdI', role: 'Sottosegretario',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Delmastro&backgroundColor=ffedd5', banner: 'bg-orange-800',
+            bio: "Le carte sono riservate, ma non troppo.",
+            stats: { followers: '45k', gaffes: 18, incoherences: 2 },
+            posts: [], inconsistencies: []
+        },
+        {
             id: 'fratoianni', name: 'Nicola Fratoianni', party: 'AVS', role: 'Deputato',
             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Nicola&backgroundColor=ef4444', banner: 'bg-red-500',
-            bio: "Sinistra Sinistra. Contro tutto ciò che è destra.",
+            bio: "Sinistra Sinistra.",
             stats: { followers: '200k', gaffes: 15, incoherences: 10 },
             posts: [], inconsistencies: []
         },
@@ -170,7 +167,7 @@ const initialDb = {
         {
             id: 'deluca', name: 'Vincenzo De Luca', party: 'PD', role: 'Presidente Campania',
             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=DeLuca&backgroundColor=fee2e2', banner: 'bg-red-800',
-            bio: "Lanciafiamme, pinguini e cafoni. Lo sceriffo.",
+            bio: "Lanciafiamme e pinguini.",
             stats: { followers: '2M', gaffes: 300, incoherences: 10 },
             posts: [], inconsistencies: []
         }
@@ -212,49 +209,29 @@ const App = () => {
         setIsAdmin(false); setView('home'); setEditingPolitician(null);
     };
 
+    // --- CRUD ---
     const handleAddPost = () => {
         if (!editingPolitician || !postForm.title) return;
-        
-        // Creazione nuovo oggetto politico aggiornato
         let updatedPosts;
         if (postForm.id) {
             updatedPosts = editingPolitician.posts.map(p => p.id === postForm.id ? postForm : p);
         } else {
             updatedPosts = [{ ...postForm, id: Date.now() }, ...editingPolitician.posts];
         }
-        
         const updatedPolitician = { ...editingPolitician, posts: updatedPosts };
-        
-        // Aggiorna il DB
-        const updatedPoliticiansList = db.politicians.map(p => p.id === editingPolitician.id ? updatedPolitician : p);
-        setDb({ ...db, politicians: updatedPoliticiansList });
-        setEditingPolitician(updatedPolitician);
-        
-        // Se stiamo visualizzando questo profilo, aggiorniamolo anche lì
-        if (selectedProfile && selectedProfile.id === editingPolitician.id) {
-            setSelectedProfile(updatedPolitician);
-        }
-        
+        updatePoliticianInDb(updatedPolitician);
         resetPostForm();
     };
 
-    const handleEditPostClick = (post) => {
-        setPostForm(post);
-    };
+    const handleEditPostClick = (post) => { setPostForm(post); };
 
     const handleDeletePost = (postId) => {
-        if (!window.confirm("Sei sicuro di voler eliminare questo post?")) return;
-        
-        const updatedPosts = editingPolitician.posts.filter(p => p.id !== postId);
-        const updatedPolitician = { ...editingPolitician, posts: updatedPosts };
-        
-        const updatedPoliticiansList = db.politicians.map(p => p.id === editingPolitician.id ? updatedPolitician : p);
-        setDb({ ...db, politicians: updatedPoliticiansList });
-        setEditingPolitician(updatedPolitician);
-        
-        if (selectedProfile && selectedProfile.id === editingPolitician.id) {
-            setSelectedProfile(updatedPolitician);
-        }
+        if (!window.confirm("Eliminare post?")) return;
+        const updatedPolitician = {
+            ...editingPolitician,
+            posts: editingPolitician.posts.filter(p => p.id !== postId)
+        };
+        updatePoliticianInDb(updatedPolitician);
     };
 
     const resetPostForm = () => {
@@ -263,81 +240,46 @@ const App = () => {
 
     const handleSavePoliticianProfile = () => {
         if (!profileForm.name) return;
-        
         let updatedList;
         let activePol;
-
         if (newPoliticianMode) {
             const newId = profileForm.name.toLowerCase().replace(/\s+/g, '');
-            activePol = { 
-                ...profileForm, 
-                id: newId, 
-                posts: [], inconsistencies: [], stats: { followers: '0', gaffes: 0, incoherences: 0 } 
-            };
+            activePol = { ...profileForm, id: newId, posts: [], inconsistencies: [], stats: { followers: '0', gaffes: 0, incoherences: 0 } };
             updatedList = [...db.politicians, activePol];
             setNewPoliticianMode(false);
         } else {
             activePol = { ...editingPolitician, ...profileForm };
             updatedList = db.politicians.map(p => p.id === editingPolitician.id ? activePol : p);
         }
-
         setDb({ ...db, politicians: updatedList });
         setEditingPolitician(activePol);
-        if (selectedProfile && selectedProfile.id === activePol.id) {
-            setSelectedProfile(activePol);
-        }
-        alert("Profilo salvato (in locale)!");
-    };
-
-    const handleSelectPolitician = (p) => {
-        setEditingPolitician(p);
-        setProfileForm(p);
-        setEditMode('posts');
-        setNewPoliticianMode(false);
-        resetPostForm();
-    };
-
-    const setupNewPolitician = () => {
-        setNewPoliticianMode(true);
-        setEditingPolitician({ id: 'new', name: 'Nuovo Politico', posts: [] });
-        setProfileForm({ id: '', name: '', party: '', role: '', avatar: '', bio: '', banner: 'bg-gray-500' });
-        setEditMode('profile');
+        if (selectedProfile && selectedProfile.id === activePol.id) setSelectedProfile(activePol);
+        alert("Profilo salvato (Localmente)!");
     };
 
     const handleDeletePolitician = (e, politicianId) => {
         e.stopPropagation();
-        if (!window.confirm("ATTENZIONE: Eliminare questo politico?")) return;
-        
+        if (!window.confirm("Eliminare politico?")) return;
         const updatedList = db.politicians.filter(p => p.id !== politicianId);
         setDb({ ...db, politicians: updatedList });
-        
-        if (editingPolitician && editingPolitician.id === politicianId) {
-            setEditingPolitician(null);
-        }
+        if (editingPolitician && editingPolitician.id === politicianId) setEditingPolitician(null);
     };
 
-    // --- NAVIGATION HELPERS ---
-    const handleProfileClick = (politician) => {
-        setSelectedProfile(politician);
-        setShowFullRegister(false);
-        setView('profile');
-        setMobileMenuOpen(false);
+    const updatePoliticianInDb = (updatedPolitician) => {
+        const updatedList = db.politicians.map(p => p.id === updatedPolitician.id ? updatedPolitician : p);
+        setDb({ ...db, politicians: updatedList });
+        setEditingPolitician(updatedPolitician);
+        if (selectedProfile && selectedProfile.id === updatedPolitician.id) setSelectedProfile(updatedPolitician);
     };
 
-    const handlePostClick = (post) => {
-        setSelectedPost(post);
-        setView('article');
-    };
+    const handleSelectPolitician = (p) => { setEditingPolitician(p); setProfileForm(p); setEditMode('posts'); setNewPoliticianMode(false); resetPostForm(); };
+    const setupNewPolitician = () => { setNewPoliticianMode(true); setEditingPolitician({ id: 'new', name: 'Nuovo', posts: [] }); setProfileForm({ id: '', name: '', party: '', role: '', avatar: '', bio: '', banner: 'bg-gray-500' }); setEditMode('profile'); };
 
-    const goBackToProfile = () => {
-        setView('profile');
-        setSelectedPost(null);
-    };
-    
-    const navigateTo = (viewName) => {
-        setView(viewName);
-        setMobileMenuOpen(false);
-    };
+    // --- NAVIGATION ---
+    const navigateTo = (viewName) => { setView(viewName); setMobileMenuOpen(false); };
+    const handleProfileClick = (p) => { setSelectedProfile(p); setShowFullRegister(false); setView('profile'); setMobileMenuOpen(false); };
+    const handlePostClick = (p) => { setSelectedPost(p); setView('article'); };
+    const goBackToProfile = () => { setView('profile'); setSelectedPost(null); };
 
     const filteredPoliticians = db.politicians.filter(p => 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -368,7 +310,7 @@ const App = () => {
                     <button onClick={() => setView('about')} className={`w-full flex items-center gap-3 px-3 py-2 border border-black text-sm transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] ${view === 'about' ? 'bg-black text-white' : 'bg-white text-black'}`}><Info size={16} /> <span className="font-bold">Manifesto</span></button>
                 </nav>
                 <div className="p-4 border-t border-black bg-white flex justify-between items-center">
-                    <p className="text-[10px] leading-relaxed font-mono text-gray-500">v.1.9 - Mobile Fixed</p>
+                    <p className="text-[10px] leading-relaxed font-mono text-gray-500">v.1.9 - Mobile Ready</p>
                     <button onClick={() => isAdmin ? setView('admin') : setView('login')} className="text-gray-400 hover:text-black transition">{isAdmin ? <Settings size={14} /> : <Lock size={14} />}</button>
                 </div>
             </div>
@@ -406,9 +348,7 @@ const App = () => {
                     <div className="max-w-5xl mx-auto p-4 md:p-8 pb-24">
                         <header className="mb-8 pt-4 border-b-2 border-black pb-6">
                             <h1 className="text-3xl md:text-5xl font-black text-black mb-3 serif-font uppercase tracking-tight">Osservatorio Politico</h1>
-                            <p className="text-sm md:text-base text-gray-700 max-w-3xl font-medium leading-relaxed font-serif">
-                                Monitoraggio indipendente di dichiarazioni pubbliche.
-                            </p>
+                            <p className="text-sm md:text-base text-gray-700 max-w-3xl font-medium leading-relaxed font-serif">Monitoraggio indipendente di dichiarazioni pubbliche.</p>
                         </header>
                         <div className="mb-8 flex items-center border border-black bg-white p-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-w-lg">
                             <div className="bg-black text-white p-2"><Search size={18} /></div>
@@ -427,8 +367,8 @@ const App = () => {
                                     </div>
                                     <div className="px-3 py-2 flex justify-between items-center bg-white">
                                         <div className="flex gap-3 text-[10px] font-bold font-mono">
-                                            <span className="text-red-600">⚠ {p.stats.gaffes || 0}</span>
-                                            <span className="text-blue-600">⇄ {p.stats.incoherences || 0}</span>
+                                            <span className="text-red-600">⚠ {p.stats.gaffes}</span>
+                                            <span className="text-blue-600">⇄ {p.stats.incoherences}</span>
                                         </div>
                                         <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                     </div>
@@ -591,6 +531,22 @@ const App = () => {
                                         )}
                                     </>
                                 ) : <div className="h-full flex items-center justify-center text-gray-400 text-xs uppercase"><div className="text-center"><Settings size={48} className="mx-auto mb-2 opacity-20"/>Seleziona un politico</div></div>}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {view === 'about' && (
+                    <div className="max-w-3xl mx-auto p-8">
+                         <div className="bg-white border-2 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                            <h1 className="text-4xl font-black serif-font mb-6 uppercase tracking-tight">Il Manifesto</h1>
+                            <div className="space-y-4 text-base font-serif leading-relaxed">
+                                <p>PolitiGaffe non è un social network. È un atto di resistenza alla memoria breve.</p>
+                                <div className="grid grid-cols-3 gap-4 my-6 font-mono text-xs">
+                                    <div className="border border-black p-3 bg-yellow-400"><strong>TRASPARENZA</strong></div>
+                                    <div className="border border-black p-3 bg-white"><strong>MEMORIA</strong></div>
+                                    <div className="border border-black p-3 bg-black text-white"><strong>CONSAPEVOLEZZA</strong></div>
+                                </div>
                             </div>
                         </div>
                     </div>
