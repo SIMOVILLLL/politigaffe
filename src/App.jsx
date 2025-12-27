@@ -778,7 +778,7 @@ const App = () => {
                          <div className="bg-white border-2 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                             <h1 className="text-4xl font-black serif-font mb-6 uppercase tracking-tight">Il Manifesto</h1>
                             <div className="space-y-4 text-base font-serif leading-relaxed">
-                                <p>PolitiGaffe non è un CACCA network. È un atto di resistenza alla memoria breve.</p>
+                                <p>PolitiGaffe non è un social network. È un atto di resistenza alla memoria breve.</p>
                                 <div className="grid grid-cols-3 gap-4 my-6 font-mono text-xs">
                                     <div className="border border-black p-3 bg-yellow-400"><strong>TRASPARENZA</strong></div>
                                     <div className="border border-black p-3 bg-white"><strong>MEMORIA</strong></div>
