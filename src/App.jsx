@@ -519,7 +519,7 @@ const App = () => {
                 {view === 'home' && (
                     <div className="max-w-2xl mx-auto p-4 pb-24">
                         <div className="flex border-b-2 border-black mb-6 sticky top-16 md:top-0 bg-[#F4F1EA] z-40 pt-4">
-                            <button onClick={() => setHomeTab('general')} className={`flex-1 py-3 font-bold uppercase text-sm border-b-4 transition-colors ${homeTab === 'general' ? 'border-black bg-white' : 'border-transparent text-gray-400 hover:text-black'}`}>Generale</button>
+                            <button onClick={() => setHomeTab('general')} className={`flex-1 py-3 font-bold uppercase text-sm border-b-4 transition-colors ${homeTab === 'general' ? 'border-black bg-white' : 'border-transparent text-gray-400 hover:text-black'}`}>Banana</button>
                             <button onClick={() => setHomeTab('favorites')} className={`flex-1 py-3 font-bold uppercase text-sm border-b-4 transition-colors ${homeTab === 'favorites' ? 'border-black bg-white' : 'border-transparent text-gray-400 hover:text-black'}`}>Preferiti</button>
                         </div>
 
@@ -737,7 +737,7 @@ const App = () => {
                                                     <div className="space-y-2">
                                                         <div className="flex items-center gap-2 mb-2">
                                                             <input type="checkbox" id="pubHome" className="w-4 h-4 accent-black" checked={postForm.publishedToHome} onChange={e => setPostForm({...postForm, publishedToHome: e.target.checked})} />
-                                                            <label htmlFor="pubHome" className="text-xs font-bold uppercase cursor-pointer">Pubblica in Home (Feed Generale)</label>
+                                                            <label htmlFor="pubHome" className="text-xs font-bold uppercase cursor-pointer">Pubblica in Home (Feed Banana)</label>
                                                         </div>
                                                         <input className="w-full p-2 border border-gray-300 text-sm font-bold" placeholder="Titolo" value={postForm.title} onChange={e => setPostForm({...postForm, title: e.target.value})} />
                                                         <textarea className="w-full p-2 border border-gray-300 text-sm h-20" placeholder="Contenuto (Breve)" value={postForm.content} onChange={e => setPostForm({...postForm, content: e.target.value})} />
